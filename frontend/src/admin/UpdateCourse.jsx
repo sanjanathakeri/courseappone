@@ -15,22 +15,21 @@ function UpdateCourse() {
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
-
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
         const { data } = await axios.get(`${BACKEND_URL}/course/${id}`, {
           withCredentials: true,
         });
+        console.log(data);
         setTitle(data.course.title);
         setDescription(data.course.description);
         setPrice(data.course.price);
-        // Safely handle if image is undefined/null
-        setImage(data.course.image?.url || "");
-        setImagePreview(data.course.image?.url || "");
+        setImage(data.course.image.url);
+        setImagePreview(data.course.image.url);
         setLoading(false);
       } catch (error) {
-        console.error("Fetch course data error:", error);
+        console.log(error);
         toast.error("Failed to fetch course data");
         setLoading(false);
       }
@@ -40,43 +39,28 @@ function UpdateCourse() {
 
   const changePhotoHandler = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        setImagePreview(reader.result);
-        setImage(file); // Store the actual file for upload
-      };
-    }
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      setImagePreview(reader.result);
+      setImage(file);
+    };
   };
-
   const handleUpdateCourse = async (e) => {
     e.preventDefault();
-
-    // Basic validation (optional)
-    if (!title || !description || !price) {
-      toast.error("Please fill all the fields");
-      return;
-    }
-
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
     formData.append("price", price);
-
-    // Append image only if it's a new file (not a string URL)
-    if (image instanceof File) {
+    if (image) {
       formData.append("imageUrl", image);
     }
-
     const admin = JSON.parse(localStorage.getItem("admin"));
-    const token = admin?.token;
-
+    const token = admin.token;
     if (!token) {
       toast.error("Please login to admin");
       return;
     }
-
     try {
       const response = await axios.put(
         `${BACKEND_URL}/course/update/${id}`,
@@ -88,13 +72,11 @@ function UpdateCourse() {
           withCredentials: true,
         }
       );
-      toast.success(response.data.message || "Course updated successfully");
-      navigate("/admin/our-courses");
+      toast.success(response.data.message || "Course updated successfully22");
+      navigate("/admin/our-courses"); // Redirect to courses page after update
     } catch (error) {
-      console.error("Update course error:", error);
-      toast.error(
-        error.response?.data?.errors || error.response?.data?.message || "Update failed"
-      );
+      console.error(error);
+      toast.error(error.response.data.errors);
     }
   };
 
@@ -145,14 +127,13 @@ function UpdateCourse() {
               <label className="block text-lg">Course Image</label>
               <div className="flex items-center justify-center">
                 <img
-                  src={imagePreview || "/imgPL.webp"}
+                  src={imagePreview ? `${imagePreview}` : "/imgPL.webp"}
                   alt="Course"
                   className="w-full max-w-sm h-auto rounded-md object-cover"
                 />
               </div>
               <input
                 type="file"
-                accept="image/*"
                 onChange={changePhotoHandler}
                 className="w-full px-3 py-2 border border-gray-400 rounded-md outline-none"
               />
