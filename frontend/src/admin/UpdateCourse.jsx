@@ -25,11 +25,12 @@ function UpdateCourse() {
         setTitle(data.course.title);
         setDescription(data.course.description);
         setPrice(data.course.price);
-        setImage(data.course.image?.url || ""); // Safe check here
-        setImagePreview(data.course.image?.url || ""); // Safe check here
+        // Safely handle if image is undefined/null
+        setImage(data.course.image?.url || "");
+        setImagePreview(data.course.image?.url || "");
         setLoading(false);
       } catch (error) {
-        console.log(error);
+        console.error("Fetch course data error:", error);
         toast.error("Failed to fetch course data");
         setLoading(false);
       }
@@ -39,21 +40,31 @@ function UpdateCourse() {
 
   const changePhotoHandler = (e) => {
     const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      setImagePreview(reader.result);
-      setImage(file); // Store the file here
-    };
+    if (file) {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        setImagePreview(reader.result);
+        setImage(file); // Store the actual file for upload
+      };
+    }
   };
 
   const handleUpdateCourse = async (e) => {
     e.preventDefault();
+
+    // Basic validation (optional)
+    if (!title || !description || !price) {
+      toast.error("Please fill all the fields");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
     formData.append("price", price);
 
+    // Append image only if it's a new file (not a string URL)
     if (image instanceof File) {
       formData.append("imageUrl", image);
     }
@@ -80,8 +91,10 @@ function UpdateCourse() {
       toast.success(response.data.message || "Course updated successfully");
       navigate("/admin/our-courses");
     } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.errors || "Update failed");
+      console.error("Update course error:", error);
+      toast.error(
+        error.response?.data?.errors || error.response?.data?.message || "Update failed"
+      );
     }
   };
 
@@ -132,13 +145,14 @@ function UpdateCourse() {
               <label className="block text-lg">Course Image</label>
               <div className="flex items-center justify-center">
                 <img
-                  src={imagePreview ? `${imagePreview}` : "/imgPL.webp"}
+                  src={imagePreview || "/imgPL.webp"}
                   alt="Course"
                   className="w-full max-w-sm h-auto rounded-md object-cover"
                 />
               </div>
               <input
                 type="file"
+                accept="image/*"
                 onChange={changePhotoHandler}
                 className="w-full px-3 py-2 border border-gray-400 rounded-md outline-none"
               />
