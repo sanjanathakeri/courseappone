@@ -15,17 +15,17 @@ function UpdateCourse() {
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
+
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
         const { data } = await axios.get(`${BACKEND_URL}/course/${id}`, {
           withCredentials: true,
         });
-        console.log(data);
         setTitle(data.course.title);
         setDescription(data.course.description);
         setPrice(data.course.price);
-        setImage(data.course.image.url);
+        setImage(data.course.image.url); // Just for reference, not uploading
         setImagePreview(data.course.image.url);
         setLoading(false);
       } catch (error) {
@@ -43,24 +43,30 @@ function UpdateCourse() {
     reader.readAsDataURL(file);
     reader.onload = () => {
       setImagePreview(reader.result);
-      setImage(file);
+      setImage(file); // Store the file here
     };
   };
+
   const handleUpdateCourse = async (e) => {
     e.preventDefault();
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
     formData.append("price", price);
-    if (image) {
+
+    // ✅ Only add image if it's a File object (not a string URL)
+    if (image instanceof File) {
       formData.append("imageUrl", image);
     }
+
     const admin = JSON.parse(localStorage.getItem("admin"));
-    const token = admin.token;
+    const token = admin?.token;
+
     if (!token) {
       toast.error("Please login to admin");
       return;
     }
+
     try {
       const response = await axios.put(
         `${BACKEND_URL}/course/update/${id}`,
@@ -72,11 +78,11 @@ function UpdateCourse() {
           withCredentials: true,
         }
       );
-      toast.success(response.data.message || "Course updated successfully22");
-      navigate("/admin/our-courses"); // Redirect to courses page after update
+      toast.success(response.data.message || "Course updated successfully");
+      navigate("/admin/our-courses");
     } catch (error) {
       console.error(error);
-      toast.error(error.response.data.errors);
+      toast.error(error.response?.data?.errors || "Update failed");
     }
   };
 
