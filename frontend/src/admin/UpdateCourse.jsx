@@ -25,8 +25,8 @@ function UpdateCourse() {
         setTitle(data.course.title);
         setDescription(data.course.description);
         setPrice(data.course.price);
-        setImage(data.course.image.url); // Just for reference, not uploading
-        setImagePreview(data.course.image.url);
+        setImage(data.course.image?.url || ""); // Safe check here
+        setImagePreview(data.course.image?.url || ""); // Safe check here
         setLoading(false);
       } catch (error) {
         console.log(error);
@@ -54,7 +54,6 @@ function UpdateCourse() {
     formData.append("description", description);
     formData.append("price", price);
 
-    // ✅ Only add image if it's a File object (not a string URL)
     if (image instanceof File) {
       formData.append("imageUrl", image);
     }
